@@ -1,6 +1,5 @@
 const Province = require("../models/Province");
 const { verifyTokenAndAuthorization } = require("./verifyToken");
-const data = require("../data.json");
 
 const router = require("express").Router();
 
@@ -15,11 +14,11 @@ router.post("/", verifyTokenAndAuthorization, async (req, res) => {
     }
 });
 
-router.get("/seed", async (req, res) => {
-    const newProvince = await Province.create(data);
+// router.get("/seed", async (req, res) => {
+//     const newProvince = await Province.create(data);
 
-    res.json({ newProvince });
-});
+//     res.json({ newProvince });
+// });
 
 //UPDATE
 router.put("/:id", verifyTokenAndAuthorization, async (req, res) => {
