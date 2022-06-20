@@ -69,16 +69,6 @@ router.get("/", async (req, res) => {
             });
         } else {
             cultures = await Culture.find().populate("province");
-            // cultures = await Culture.aggregate([
-            //     {
-            //         $lookup: {
-            //             from: Province,
-            //             localField: "province_id",
-            //             foreignField: "_id.str",
-            //             as: "province",
-            //         },
-            //     },
-            // ]);
         }
 
         res.status(200).json(cultures);
@@ -106,25 +96,6 @@ router.get("/count", async (req, res) => {
             },
         },
         { $unwind: "$province" },
-    ];
-    const coba = [
-        {
-            $sortByCount: "$province",
-        },
-        {
-            $lookup: {
-                from: "provinces",
-                localField: "_id",
-                foreignField: "_id",
-                as: "province",
-            },
-        },
-        { $unwind: "$province" },
-        {
-            $project: {
-                province: "$province",
-            },
-        },
     ];
 
     try {
@@ -155,6 +126,20 @@ router.get("/calculate", async (req, res) => {
         high = average + n * standarDev;
         low = average - n * standarDev;
 
+        let highProvince = 0;
+        let lowProvince = 0;
+
+        cultures.forEach((culture) => {
+            if (culture.count > high) {
+                highProvince += 1;
+            }
+            if (culture.count < low) {
+                lowProvince += 1;
+            }
+        });
+
+        let midProvince = jumlahProvinsi - highProvince - lowProvince;
+
         res.status(200).json({
             jumlahBudaya,
             jumlahProvinsi,
@@ -163,6 +148,9 @@ router.get("/calculate", async (req, res) => {
             n,
             high,
             low,
+            highProvince,
+            lowProvince,
+            midProvince,
         });
     } catch (err) {
         res.status(500).json(err);
