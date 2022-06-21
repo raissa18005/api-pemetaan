@@ -68,7 +68,7 @@ router.get("/", async (req, res) => {
                 province_id: { $in: [qProvince] },
             });
         } else {
-            cultures = await Culture.find().populate("province");
+            cultures = await Culture.find().populate("province", "name");
         }
 
         res.status(200).json(cultures);
