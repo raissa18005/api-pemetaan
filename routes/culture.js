@@ -112,6 +112,8 @@ router.get("/count", async (req, res) => {
 // CALCULATION
 
 router.get("/calculate", async (req, res) => {
+    const qRef = req.query.ref;
+    const n = qRef ? qRef : 0.8;
     const pipeline = [{ $group: { _id: "$province", count: { $sum: 1 } } }];
 
     try {
@@ -121,7 +123,60 @@ router.get("/calculate", async (req, res) => {
 
         counts = cultures.map((item) => item.count);
         average = jumlahBudaya / jumlahProvinsi;
+        selisih = counts.map((item) => Math.pow(item - average, 2));
+        jumlahSelisih = selisih.reduce((prev, curr) => prev + curr);
+        standar = Math.sqrt(jumlahSelisih / (jumlahProvinsi - 1));
         standarDev = std(counts);
+        // n = 0.8;
+        high = average + n * standarDev;
+        low = average - n * standarDev;
+
+        let highProvince = 0;
+        let lowProvince = 0;
+
+        cultures.forEach((culture) => {
+            if (culture.count > high) {
+                highProvince += 1;
+            }
+            if (culture.count < low) {
+                lowProvince += 1;
+            }
+        });
+
+        let midProvince = jumlahProvinsi - highProvince - lowProvince;
+
+        res.status(200).json({
+            jumlahBudaya,
+            jumlahProvinsi,
+            average,
+            standarDev,
+            n,
+            high,
+            low,
+            highProvince,
+            lowProvince,
+            midProvince,
+            n,
+        });
+    } catch (err) {
+        res.status(500).json(err);
+    }
+});
+
+router.get("/calculatemanual", async (req, res) => {
+    const pipeline = [{ $group: { _id: "$province", count: { $sum: 1 } } }];
+
+    try {
+        cultures = await Culture.aggregate(pipeline);
+        jumlahBudaya = await Culture.count();
+        jumlahProvinsi = await Province.count();
+
+        counts = cultures.map((item) => item.count);
+        average = jumlahBudaya / jumlahProvinsi;
+        selisih = counts.map((item) => Math.pow(item - average, 2));
+        jumlahSelisih = selisih.reduce((prev, curr) => prev + curr);
+        standarDev = Math.sqrt(jumlahSelisih / (jumlahProvinsi - 1));
+
         n = 0.8;
         high = average + n * standarDev;
         low = average - n * standarDev;
