@@ -112,8 +112,8 @@ router.get("/count", async (req, res) => {
 // CALCULATION
 
 router.get("/calculate", async (req, res) => {
-    const qRef = req.query.ref;
-    const n = qRef ? qRef : 0.8;
+    const qAcuan = req.query.acuan;
+    const n = qAcuan ? qAcuan : 0.8;
     const pipeline = [{ $group: { _id: "$province", count: { $sum: 1 } } }];
 
     try {
@@ -121,42 +121,42 @@ router.get("/calculate", async (req, res) => {
         jumlahBudaya = await Culture.count();
         jumlahProvinsi = await Province.count();
 
-        counts = cultures.map((item) => item.count);
+        jumlahPerProvinsi = cultures.map((item) => item.count);
         average = jumlahBudaya / jumlahProvinsi;
-        selisih = counts.map((item) => Math.pow(item - average, 2));
+        selisih = jumlahPerProvinsi.map((item) => Math.pow(item - average, 2));
         jumlahSelisih = selisih.reduce((prev, curr) => prev + curr);
-        standar = Math.sqrt(jumlahSelisih / (jumlahProvinsi - 1));
-        standarDev = std(counts);
+        standarDeviasi = Math.sqrt(jumlahSelisih / (jumlahProvinsi - 1));
+        deviationStandard = std(jumlahPerProvinsi);
         // n = 0.8;
-        high = average + n * standarDev;
-        low = average - n * standarDev;
+        highBound = average + n * standarDeviasi;
+        lowBound = average - n * standarDeviasi;
 
-        let highProvince = 0;
-        let lowProvince = 0;
+        let highProvinces = 0;
+        let lowProvinces = 0;
 
         cultures.forEach((culture) => {
-            if (culture.count > high) {
-                highProvince += 1;
+            if (culture.count > highBound) {
+                highProvinces += 1;
             }
-            if (culture.count < low) {
-                lowProvince += 1;
+            if (culture.count < lowBound) {
+                lowProvinces += 1;
             }
         });
 
-        let midProvince = jumlahProvinsi - highProvince - lowProvince;
+        let midProvinces = jumlahProvinsi - highProvinces - lowProvinces;
 
         res.status(200).json({
             jumlahBudaya,
             jumlahProvinsi,
             average,
-            standarDev,
+            standarDeviasi,
+            deviationStandard,
             n,
-            high,
-            low,
-            highProvince,
-            lowProvince,
-            midProvince,
-            n,
+            highBound,
+            lowBound,
+            highProvinces,
+            lowProvinces,
+            midProvinces,
         });
     } catch (err) {
         res.status(500).json(err);
